@@ -2,61 +2,58 @@
 
 Text for each row of the template, ready to paste. Images are in `process/screenshots/`.
 
----
-
 ## Project Name
 
-**Pompom Sequence**
+Pompom Sequence
 
 ## Final concept
 
-You find a small, deflated pompom lying on the ground. Pressing and holding it puffs it up to full fluff. You then drag it onto a launch mark and throw it, slingshot-style, into a ring. The sequence is one continuous, linear experience with the same pompom from start to finish. I want it to feel tactile, light and a little playful: the pompom should seem soft and alive, with fibers that tremble, lag and burst in response to your hand, so each gesture feels like handling a real object rather than pressing a button.
+A tiny, deflated pompom is lying on the ground, trembling a little like it wants attention. You press and hold it until it puffs up into a full, fluffy ball. Then you drag it over to a launch spot, pull it back like a slingshot, and toss it into a ring. It's one short, continuous moment with the same pompom from start to finish. I wanted it to feel soft and a bit silly, like you're playing with something that's almost alive. The fibers shiver when you hold it, trail behind when you move it, and puff out when it lands.
 
 ## Final prototype link
 
 https://pikapikasilvia.github.io/sequential-interaction-project/
 
-(Repository: https://github.com/pikapikasilvia/sequential-interaction-project. Add `?tune` to the URL to show the tool panels.)
-
 ## Your custom tool panel(s)
 
 *Image: `screenshots/0-panels.png`*
 
-I built two panels, each floating and collapsible, with every value labeled with its unit and range, and *Restore defaults* and *Copy settings* buttons.
+I made two panels that sit on either side of the prototype and can be folded away.
 
-- **Motion panel** (left): refines how each step *feels*. Hold: hold duration, deflated size, fiber shake, and inflate curve. Drag: follow stiffness and damping, launch-mark snap distance, and snap motion. Throw: max pull distance, throw power, gravity, bounce, rolling friction, ring radius, hit tolerance, and the return motion after a miss. Motion curves can be set to Linear, Ease In, Ease Out, Ease In-Out or Spring/Bounce.
-- **Visual panel** (right): refines how the grayscale study becomes a unified visual experience. It adjusts the background color and paper grain, the darkest and lightest fiber colors, fiber opacity and thickness, ring fill, outline and outline width, cue colors (hint rings, launch mark, aim path, progress arc), and shadow color, opacity and softness.
+The Motion panel is all about feel. For Hold, I can change how long you need to press, how flat the pompom starts and how much the fibers shake. For Drag, I can make it follow your finger tightly or lazily, and change how close you have to drop it to the launch spot. For Throw, I can play with pull distance, throw strength, gravity, bounce, rolling friction, ring size and how forgiving a "hit" is. I can also switch the motion curves between linear, eased and springy.
 
-I wanted to refine the balance between "soft and floaty" and "weighty", and to test whether a color and texture direction could make the three studies read as one object in one world.
+The Visual panel is where I tried to turn my three grey studies into one world. It controls the background color and paper texture, the colors and thickness of the fibers, the ring and guide colors, and how dark and soft the shadow is.
+
+Mostly I wanted to figure out where the pompom sits between "light and floaty" and "heavy and solid", and whether color alone could make the three steps feel like one object.
 
 ## Settings variation 1
 
 *Image: `screenshots/1-default.png`*
 
-**Original grayscale baseline.** Hold 1.1 s, medium throw power (3.4), gravity 2000 px/s², bounce 0.38, grayscale visuals matching the original studies. This is the balanced starting point: the hold feels deliberate, and the throw arcs and settles at a readable pace.
+The original grey version. Hold for 1.1 seconds, medium gravity, a bit of bounce. It's basically my studies stitched together. It works, and the timing feels calm and even, but it's a little plain.
 
 ## Settings variation 2
 
 *Image: `screenshots/2-lighter.png`*
 
-**Lighter (chosen for the final prototype).** Hold 0.6 s, gravity lowered to 1100, bounce raised to 0.62, rolling friction 0.25, drag more responsive (stiffness 120, damping 9). Visuals: pale lavender and pink, thinner strands, light grain, and a faint, soft shadow. The pompom inflates quickly and floats and bounces more, so it feels airy and toy-like.
+The lighter version, and the one I ended up using. The hold only takes 0.6 seconds, gravity is much lower and the bounce is way higher, so the pompom floats up and hops a few times before settling. The drag snaps to your finger faster too. I paired it with soft lavender and pink, thinner fibers and a faint, blurry shadow. It feels airy, almost like a toy.
 
 ## Settings variation 3
 
 *Image: `screenshots/3-heavier.png`*
 
-**Heavier.** Hold 1.8 s, gravity raised to 3400, bounce cut to 0.12, more rolling friction (0.03), a smaller ring (0.65) and a slower, heavier drag (stiffness 60, damping 20). Visuals: dark background, thick caramel-colored strands, strong grain and a dark, hard shadow. Inflating takes effort, the throw drops quickly and barely bounces, and the smaller target makes landing a hit feel earned.
+The heavy version. You have to hold for 1.8 seconds, gravity is cranked up, there's barely any bounce and the ring is smaller. Dragging feels slow, like it has real weight. I gave it a dark background, thick caramel-colored fibers and a hard black shadow. It feels more like a wool ball than a pompom, and landing a throw feels like an actual achievement.
 
 ## Concept evolution
 
-My Week 3 direction started as three separate grayscale studies of one pompom: **Hold** (press to inflate), **Drag** (move it on a spring) and **Flick** (throw it so it slides and bounces off the walls). When I combined them into one sequence, my professor pointed out that **Drag and Flick felt too similar**: both were "press, move, release", and the only difference was release speed, so they didn't read as two distinct interactions.
+In Week 3 I had three separate grey studies of the same pompom: Hold to inflate it, Drag to move it around, and Flick to send it sliding and bouncing off the walls. When I put them together, my professor pointed out that Drag and Flick were basically the same gesture. Both were press, move, let go. The only difference was how fast you let go, so they didn't feel like two different interactions.
 
-That feedback led me to replace Flick with **Throw**. Throw uses an opposite gesture, pulling *back* and releasing like a slingshot, and adds height, an arc, a shadow and landing bounces, so being thrown into the air feels clearly different from being dragged along the ground. I also added a goal: a dashed launch mark and a target ring. Now the end of Drag (dropping the pompom onto the launch mark) becomes the start of Throw, which makes the sequence more connected and gives it a clear ending.
+That pushed me to swap Flick for Throw. Instead of pushing the pompom forward, you pull it back and let go like a slingshot. I added height, an arc, a shadow and little bounces on landing, so throwing it into the air feels really different from sliding it along the ground. I also gave it somewhere to go: a dashed launch spot and a target ring. That turned out to connect everything better, because the end of Drag (dropping it on the launch spot) is now exactly where Throw begins.
 
 ## Final Prototype Reflection
 
-Building the panels turned guesses into quick experiments. Instead of editing numbers in code and reloading, I could drag a slider and immediately feel the difference. That helped me discover how much of the "personality" comes from just a few values: gravity and bounce decide whether the pompom feels light or heavy, and hold duration decides whether inflating feels effortless or effortful. The Visual panel showed me that color and texture change the perceived weight too: the same physics reads heavier with dark, thick fibers and a hard shadow. Comparing the three variations, I chose the lighter purple setting for the final prototype because its soft colors and floaty, bouncy motion best match the playful, fluffy feeling I want.
+The panels changed how I worked. Before, I'd change a number in the code, reload and try to remember what it felt like before. With sliders I could just drag and feel the difference right away. I was surprised how much of the pompom's personality came down to a few numbers. Gravity and bounce decide whether it feels light or heavy, and hold time decides whether puffing it up feels easy or like effort. Color mattered more than I expected too. With the exact same physics, dark thick fibers and a hard shadow made it feel heavier. After comparing all three, I went with the lighter purple version because it matched the soft, playful feeling I had in mind from the start.
 
-The most resolved part is the hand-off between steps. Hold unlocks Drag, Drag ends by snapping onto the launch mark, and Throw starts from there, all with the same pompom, so the sequence feels continuous rather than like three demos stitched together.
+I think the transitions between steps are the most finished part. Holding unlocks dragging, dropping it on the launch spot sets up the throw, and it's the same pompom the whole time, so it feels like one little story instead of three separate demos.
 
-Next, I'd like to explore committing to one unified visual direction for Part 2, adding sound and visual feedback that change with the chosen "weight", and testing with other people to find which balance of light and heavy feels most satisfying.
+Next I'd like to keep polishing the visuals, add sounds that match the lighter feel, and let other people try it to see whether they prefer it light or heavy.
