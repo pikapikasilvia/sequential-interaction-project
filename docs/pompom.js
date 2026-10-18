@@ -25,7 +25,34 @@ const SAVED={
  returnMotion:'spring',// Throw: motion back to the launch mark after a miss
  returnDuration:.6    // Throw: s, for eased return motions
 };
-const SET=Object.assign({},SAVED);   // live values, edited by the panel
+const SET=Object.assign({},SAVED);   // live values, edited by the Motion panel
+// Saved visual defaults (Visual panel). Colors are hex; the defaults reproduce the grayscale studies.
+const VIS_SAVED={
+ page:'#cdcdcd',       // Background: area around the stage
+ stage:'#ececec',      // Background: stage
+ grain:0,              // Background: paper grain, 0–1
+ fiberDark:'#2c2c2c',  // Fibers: darkest strands
+ fiberLight:'#c2c2c2', // Fibers: lightest strands
+ fiberOpacity:1,       // Fibers: × each strand's opacity
+ fiberWidth:1,         // Fibers: × strand thickness
+ ringFill:'#e2e2e2',   // Ring: fill
+ ringStroke:'#7a7a7a', // Ring: outline
+ ringWidth:4,          // Ring: outline px
+ accent:'#3a3a3a',     // Cues: progress arc, hit flash, active launch mark
+ cue:'#7a7a7a',        // Cues: hint rings, launch mark, aim path
+ shadow:'#555555',     // Shadow: color
+ shadowOpacity:.2,     // Shadow: opacity at rest
+ shadowSoftness:0      // Shadow: edge blur, 0 = hard edge, 1 = very soft
+};
+const VIS=Object.assign({},VIS_SAVED);  // live values, edited by the Visual panel
+// fiber color = mix of fiberDark..fiberLight by the strand's original gray level
+const hex=c=>[1,3,5].map(i=>parseInt(c.slice(i,i+2),16)),GRAYS=[0x2c,0xc2];
+let fibKey='';
+function fiberColors(){const k=VIS.fiberDark+VIS.fiberLight;if(k===fibKey)return;fibKey=k;const a=hex(VIS.fiberDark),b=hex(VIS.fiberLight);
+ for(const f of fib){const u=Math.max(0,Math.min(1,(parseInt(f.col.slice(1,3),16)-GRAYS[0])/(GRAYS[1]-GRAYS[0])));f.c2='rgb('+a.map((v,i)=>Math.round(v+(b[i]-v)*u)).join(',')+')'}}
+let grainC=null;
+function grainCanvas(){if(grainC)return grainC;grainC=document.createElement('canvas');grainC.width=grainC.height=160;const x=grainC.getContext('2d'),im=x.createImageData(160,160);
+ for(let i=0;i<im.data.length;i+=4){const v=Math.random()*255;im.data[i]=im.data[i+1]=im.data[i+2]=v;im.data[i+3]=255}x.putImageData(im,0,0);return grainC}
 const EASE={linear:t=>t,easeIn:t=>t*t*t,easeOut:t=>1-Math.pow(1-t,3),easeInOut:t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2};
 // Throw study tunables (units: RF = pompom radius, px, seconds)
 const CFG={pullMin:.3,flightBase:.55,flightPower:.45,bounceMinImpact:260,groundKeep:.55,grabRadius:.9,restTime:.9};
@@ -155,42 +182,44 @@ function step(now){
   A.bp.frequency.setTargetAtTime(Math.max(500+sn*2800,aiming?500+P.pw*1500:0,holding?400+p*1800:0),A.x.currentTime,.05)}
 
  // draw
- ctx.setTransform(D,0,0,D,0,0);ctx.fillStyle='#ececec';ctx.fillRect(0,0,W,H);ctx.lineCap='round';
+ ctx.setTransform(D,0,0,D,0,0);ctx.fillStyle=VIS.stage;ctx.fillRect(0,0,W,H);ctx.lineCap='round';
+ if(VIS.grain>0){ctx.globalAlpha=VIS.grain*.18;ctx.globalCompositeOperation='overlay';ctx.fillStyle=ctx.createPattern(grainCanvas(),'repeat');ctx.fillRect(0,0,W,H);ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1}
+ document.documentElement.style.setProperty('--page',VIS.page);document.documentElement.style.setProperty('--stage',VIS.stage);fiberColors();
  if(phase>=DRAG){
   // target ring (Throw study), faded in once Hold is done
   ctx.save();ctx.globalAlpha=reveal;ctx.translate(Tg.x,Tg.y);ctx.scale(1+wob*.07*Math.sin(t*28),1+wob*.07*Math.sin(t*28));
-  ctx.fillStyle='#e2e2e2';ctx.beginPath();ctx.arc(0,0,RR,0,6.283);ctx.fill();
-  ctx.strokeStyle='#7a7a7a';ctx.lineWidth=4;ctx.stroke();
-  if(flash>.02){ctx.globalAlpha=flash;ctx.strokeStyle='#3a3a3a';ctx.lineWidth=7;ctx.beginPath();ctx.arc(0,0,RR*(1+(1-flash)*.14),0,6.283);ctx.stroke()}
+  ctx.fillStyle=VIS.ringFill;ctx.beginPath();ctx.arc(0,0,RR,0,6.283);ctx.fill();
+  ctx.strokeStyle=VIS.ringStroke;ctx.lineWidth=VIS.ringWidth;if(VIS.ringWidth>0)ctx.stroke();
+  if(flash>.02){ctx.globalAlpha=flash;ctx.strokeStyle=VIS.accent;ctx.lineWidth=7;ctx.beginPath();ctx.arc(0,0,RR*(1+(1-flash)*.14),0,6.283);ctx.stroke()}
   ctx.restore();
   // dashed launch mark (Throw study); darker while the dragged pompom is inside it
   const over=mode==='drag'&&dist(T,L)<RF*SET.snapDistance;
-  ctx.strokeStyle=over?'#3a3a3a':'#7a7a7a';ctx.lineWidth=3;ctx.setLineDash([8,9]);ctx.globalAlpha=(over?.8:.4)*reveal;
+  ctx.strokeStyle=over?VIS.accent:VIS.cue;ctx.lineWidth=3;ctx.setLineDash([8,9]);ctx.globalAlpha=(over?.8:.4)*reveal;
   ctx.beginPath();ctx.arc(L.x,L.y,markR(),0,6.283);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1}
- ctx.strokeStyle='#7a7a7a';ctx.lineWidth=3;
+ ctx.strokeStyle=VIS.cue;ctx.lineWidth=3;
  if(phase===HOLD){
   // Hold study: pulsing hint ring, faint target ring, progress arc
   const rr=RF*.62;
   if(!holding&&p===0){const f=(t%1.6)/1.6;ctx.globalAlpha=.55*(1-f);ctx.beginPath();ctx.arc(g.x,g.y,rr*(1+f*.45),0,6.283);ctx.stroke()}
   ctx.globalAlpha=.35;ctx.beginPath();ctx.arc(g.x,g.y,rr,0,6.283);ctx.stroke();ctx.globalAlpha=1;
-  if(p>0){ctx.strokeStyle='#3a3a3a';ctx.lineWidth=5;ctx.beginPath();ctx.arc(g.x,g.y,rr,-1.5708,-1.5708+6.283*p);ctx.stroke()}}
+  if(p>0){ctx.strokeStyle=VIS.accent;ctx.lineWidth=5;ctx.beginPath();ctx.arc(g.x,g.y,rr,-1.5708,-1.5708+6.283*p);ctx.stroke()}}
  else if(!used&&(phase===DRAG&&mode!=='drag'||phase===THROW&&mode==='idle')){
   // Drag/Throw studies: affordance ring until the step's first grab
   const f=(t%1.6)/1.6,R=RF*.95;ctx.globalAlpha=.55*(1-f);ctx.beginPath();ctx.arc(g.x,g.y,R*(1+f*.25),0,6.283);ctx.stroke();ctx.globalAlpha=1}
  // aim: band, trajectory preview, landing marker (Throw study)
  if(aiming&&P.len>=RF*CFG.pullMin){
   ctx.globalAlpha=.35;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(L.x,L.y);ctx.lineTo(g.x,g.y);ctx.stroke();
-  const zmax=SET.gravity*P.tf*P.tf/8;ctx.fillStyle='#5a5a5a';
+  const zmax=SET.gravity*P.tf*P.tf/8;ctx.fillStyle=VIS.cue;
   for(let i=1;i<=12;i++){const u=i/12,x=T.x+(P.land.x-T.x)*u,y=T.y+(P.land.y-T.y)*u-4*zmax*u*(1-u);
    ctx.globalAlpha=.65*(1-u*.5);ctx.beginPath();ctx.arc(x,y,3,0,6.283);ctx.fill()}
-  ctx.globalAlpha=.5;ctx.strokeStyle='#7a7a7a';ctx.lineWidth=2.5;ctx.beginPath();ctx.ellipse(P.land.x,P.land.y,RF*.3,RF*.15,0,0,6.283);ctx.stroke();ctx.globalAlpha=1}
+  ctx.globalAlpha=.5;ctx.strokeStyle=VIS.cue;ctx.lineWidth=2.5;ctx.beginPath();ctx.ellipse(P.land.x,P.land.y,RF*.3,RF*.15,0,0,6.283);ctx.stroke();ctx.globalAlpha=1}
  // shadow (Throw study)
- if(phase>=THROW){const sh=1/(1+z/300);ctx.fillStyle='#555';ctx.globalAlpha=.2*sh;ctx.beginPath();ctx.ellipse(g.x+z*.12,g.y+RF*.55,RF*.7*sh*puff,RF*.25*sh*puff,0,0,6.283);ctx.fill();ctx.globalAlpha=1}
+ if(phase>=THROW){const sh=1/(1+z/300);ctx.fillStyle=VIS.shadow;ctx.globalAlpha=VIS.shadowOpacity*sh;if(VIS.shadowSoftness>0)ctx.filter='blur('+(VIS.shadowSoftness*RF*.25).toFixed(1)+'px)';ctx.beginPath();ctx.ellipse(g.x+z*.12,g.y+RF*.55,RF*.7*sh*puff,RF*.25*sh*puff,0,0,6.283);ctx.fill();ctx.filter='none';ctx.globalAlpha=1}
  // pompom
  const pf=puff*(1+z/420);
  for(const f of fib){ctx.beginPath();ctx.moveTo(B.x+f.x0*pf*S,B.y+f.y0*pf*S);
   ctx.quadraticCurveTo(B.x+(f.xm*pf+f.tx*.45)*S,B.y+(f.ym*pf+f.ty*.45)*S,B.x+(f.x1*pf+f.tx)*S,B.y+(f.y1*pf+f.ty)*S);
-  ctx.strokeStyle=f.col;ctx.globalAlpha=f.o;ctx.lineWidth=f.w*S*1.1;ctx.stroke()}
+  ctx.strokeStyle=f.c2;ctx.globalAlpha=Math.min(1,f.o*VIS.fiberOpacity);ctx.lineWidth=f.w*S*1.1*VIS.fiberWidth;ctx.stroke()}
  ctx.globalAlpha=1;
  requestAnimationFrame(step)}
 size();requestAnimationFrame(step);
