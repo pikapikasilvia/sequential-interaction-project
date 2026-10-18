@@ -6,20 +6,20 @@ const HOLD=0,DRAG=1,THROW=2,DONE=3;
 // Saved defaults for the values exposed in the control panel (panel.js). Units: s, px, px/s²,
 // RF = pompom radius. Motion: 'linear' | 'easeIn' | 'easeOut' | 'easeInOut' | 'spring'.
 const SAVED={
- holdTime:1.1,        // Hold: s of continuous hold to fill the ring
- deflatedSize:.45,    // Hold: start size, fraction of full size
- holdShake:3.5,       // Hold: extra fiber shake at full hold (× resting sway)
+ holdTime:.6,        // Hold: s of continuous hold to fill the ring
+ deflatedSize:.55,    // Hold: start size, fraction of full size
+ holdShake:5,       // Hold: extra fiber shake at full hold (× resting sway)
  holdCurve:'spring',  // Hold: how size follows hold progress
- dragStiffness:90,    // Drag: follow spring stiffness
- dragDamping:13,      // Drag: follow spring damping
+ dragStiffness:120,    // Drag: follow spring stiffness
+ dragDamping:9,      // Drag: follow spring damping
  snapDistance:.95,    // Drag: release within this × RF of the launch mark to snap
  snapMotion:'spring', // Drag: motion onto the launch mark
  snapDuration:.45,    // Drag: s, for eased snap motions
  pullMax:1.4,         // Throw: max pull, × RF
  rangePerPx:3.4,      // Throw: px of flight per px pulled
- gravity:2000,        // Throw: px/s²
- bounceKeep:.38,      // Throw: fraction of impact speed kept on bounce
- rollFriction:.08,    // Throw: fraction of rolling speed kept per second
+ gravity:1100,        // Throw: px/s²
+ bounceKeep:.62,      // Throw: fraction of impact speed kept on bounce
+ rollFriction:.25,    // Throw: fraction of rolling speed kept per second
  ringRadius:.9,       // Throw: target ring radius, × RF
  hitRadius:.85,       // Throw: landing counts inside this fraction of the ring radius
  returnMotion:'spring',// Throw: motion back to the launch mark after a miss
@@ -28,21 +28,21 @@ const SAVED={
 const SET=Object.assign({},SAVED);   // live values, edited by the Motion panel
 // Saved visual defaults (Visual panel). Colors are hex; the defaults reproduce the grayscale studies.
 const VIS_SAVED={
- page:'#cdcdcd',       // Background: area around the stage
- stage:'#ececec',      // Background: stage
- grain:0,              // Background: paper grain, 0–1
- fiberDark:'#2c2c2c',  // Fibers: darkest strands
- fiberLight:'#c2c2c2', // Fibers: lightest strands
- fiberOpacity:1,       // Fibers: × each strand's opacity
- fiberWidth:1,         // Fibers: × strand thickness
- ringFill:'#e2e2e2',   // Ring: fill
- ringStroke:'#7a7a7a', // Ring: outline
- ringWidth:4,          // Ring: outline px
- accent:'#3a3a3a',     // Cues: progress arc, hit flash, active launch mark
- cue:'#7a7a7a',        // Cues: hint rings, launch mark, aim path
- shadow:'#555555',     // Shadow: color
- shadowOpacity:.2,     // Shadow: opacity at rest
- shadowSoftness:0      // Shadow: edge blur, 0 = hard edge, 1 = very soft
+ page:'#e9e4f2',       // Background: area around the stage
+ stage:'#f7f4fb',      // Background: stage
+ grain:.2,              // Background: paper grain, 0–1
+ fiberDark:'#7d6fa8',  // Fibers: darkest strands
+ fiberLight:'#f3d9e6', // Fibers: lightest strands
+ fiberOpacity:.9,       // Fibers: × each strand's opacity
+ fiberWidth:.8,         // Fibers: × strand thickness
+ ringFill:'#efe7f7',   // Ring: fill
+ ringStroke:'#b7a6d9', // Ring: outline
+ ringWidth:3,          // Ring: outline px
+ accent:'#6f5aa8',     // Cues: progress arc, hit flash, active launch mark
+ cue:'#a594c9',        // Cues: hint rings, launch mark, aim path
+ shadow:'#8a7fb0',     // Shadow: color
+ shadowOpacity:.12,     // Shadow: opacity at rest
+ shadowSoftness:.8// Shadow: edge blur, 0 = hard edge, 1 = very soft
 };
 const VIS=Object.assign({},VIS_SAVED);  // live values, edited by the Visual panel
 // fiber color = mix of fiberDark..fiberLight by the strand's original gray level
