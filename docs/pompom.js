@@ -3,9 +3,32 @@
 // (artifacts/). The Throw study's ground position `g` + height `z` model is the base;
 // Hold and Drag run on the same body with z = 0.
 const HOLD=0,DRAG=1,THROW=2,DONE=3;
-const HOLD_TIME=1.1;      // s of continuous hold to fill the ring (Hold study)
+// Saved defaults for the values exposed in the control panel (panel.js). Units: s, px, px/s²,
+// RF = pompom radius. Motion: 'linear' | 'easeIn' | 'easeOut' | 'easeInOut' | 'spring'.
+const SAVED={
+ holdTime:1.1,        // Hold: s of continuous hold to fill the ring
+ deflatedSize:.45,    // Hold: start size, fraction of full size
+ holdShake:3.5,       // Hold: extra fiber shake at full hold (× resting sway)
+ holdCurve:'spring',  // Hold: how size follows hold progress
+ dragStiffness:90,    // Drag: follow spring stiffness
+ dragDamping:13,      // Drag: follow spring damping
+ snapDistance:.95,    // Drag: release within this × RF of the launch mark to snap
+ snapMotion:'spring', // Drag: motion onto the launch mark
+ snapDuration:.45,    // Drag: s, for eased snap motions
+ pullMax:1.4,         // Throw: max pull, × RF
+ rangePerPx:3.4,      // Throw: px of flight per px pulled
+ gravity:2000,        // Throw: px/s²
+ bounceKeep:.38,      // Throw: fraction of impact speed kept on bounce
+ rollFriction:.08,    // Throw: fraction of rolling speed kept per second
+ ringRadius:.9,       // Throw: target ring radius, × RF
+ hitRadius:.85,       // Throw: landing counts inside this fraction of the ring radius
+ returnMotion:'spring',// Throw: motion back to the launch mark after a miss
+ returnDuration:.6    // Throw: s, for eased return motions
+};
+const SET=Object.assign({},SAVED);   // live values, edited by the panel
+const EASE={linear:t=>t,easeIn:t=>t*t*t,easeOut:t=>1-Math.pow(1-t,3),easeInOut:t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2};
 // Throw study tunables (units: RF = pompom radius, px, seconds)
-const CFG={pullMax:1.4,pullMin:.3,rangePerPx:3.4,gravity:2000,flightBase:.55,flightPower:.45,bounceKeep:.38,bounceMinImpact:260,groundKeep:.55,rollFriction:.08,hitRadius:.85,grabRadius:.9,restTime:.9,ringRadius:.9};
+const CFG={pullMin:.3,flightBase:.55,flightPower:.45,bounceMinImpact:260,groundKeep:.55,grabRadius:.9,restTime:.9};
 
 const stage=document.getElementById('stage'),cv=document.getElementById('c'),ctx=cv.getContext('2d');
 let W,H,D,S,RF,RR,PMAX,L={x:0,y:0},Tg={x:0,y:0};
@@ -13,18 +36,18 @@ const fib=F.map(f=>({x0:f[0],y0:f[1],xm:f[2],ym:f[3],x1:f[4],y1:f[5],col:f[6],w:
  tx:0,ty:0,vx:0,vy:0,k:40+Math.random()*90,c:3.5+Math.random()*4,ph:Math.random()*6.28,len:Math.hypot(f[4],f[5])}));
 const g={x:0,y:0},gv={x:0,y:0},B={x:0,y:0,vx:0,vy:0,ax:0,ay:0},T={x:0,y:0};
 // phase: sequence step. mode: Throw study sub-state (idle/aim/fly/roll/return/done) or 'drag'/'settle' in Drag
-let phase=HOLD,mode='idle',holding=false,p=0,z=0,vz=0,puff=.45,pv=0,pulse=0,off={x:0,y:0},last=performance.now(),t0=last,hid=null,
- used=false,hit=false,landed=false,rest=0,wob=0,flash=0,reveal=0,sized=false;
+let phase=HOLD,mode='idle',holding=false,p=0,z=0,vz=0,puff=SAVED.deflatedSize,pv=0,pulse=0,off={x:0,y:0},last=performance.now(),t0=last,hid=null,
+ tw=null,used=false,hit=false,landed=false,rest=0,wob=0,flash=0,reveal=0,sized=false;
 let A=null,muted=false;
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const mg=()=>RF*.55;
 const home=()=>({x:W/2,y:H*.42});
 const markR=()=>RF*.95;   // dashed launch mark radius (Throw study)
 function size(){const r=stage.getBoundingClientRect();D=Math.min(devicePixelRatio||1,2);W=r.width;H=r.height;cv.width=W*D;cv.height=H*D;
- S=W*.3/160;RF=160*S;RR=RF*CFG.ringRadius;PMAX=RF*CFG.pullMax;L={x:W/2,y:H*.62};Tg={x:W/2,y:H*.2};
+ S=W*.3/160;RF=160*S;L={x:W/2,y:H*.62};Tg={x:W/2,y:H*.2};
  // first call sets the start state; later resizes keep progress
  if(!sized){sized=true;reset(true)}else if(phase===HOLD){const h=home();g.x=T.x=h.x;g.y=T.y=h.y}else if(phase===THROW&&mode==='idle'){g.x=T.x=L.x;g.y=T.y=L.y}}
-function reset(quiet){phase=HOLD;mode='idle';holding=false;p=0;z=vz=0;puff=.45;pv=0;pulse=0;used=false;hit=false;landed=false;rest=0;wob=0;flash=0;reveal=0;hid=null;
+function reset(quiet){phase=HOLD;mode='idle';holding=false;p=0;z=vz=0;puff=SET.deflatedSize;pv=0;pulse=0;tw=null;used=false;hit=false;landed=false;rest=0;wob=0;flash=0;reveal=0;hid=null;
  const h=home();g.x=T.x=B.x=h.x;g.y=T.y=B.y=h.y;gv.x=gv.y=B.vx=B.vy=B.ax=B.ay=0;for(const f of fib){f.tx=f.ty=f.vx=f.vy=0}if(!quiet)thump(.4)}
 addEventListener('resize',size);
 
@@ -48,7 +71,7 @@ function clampT(){T.x=Math.max(mg(),Math.min(W-mg(),T.x));T.y=Math.max(mg(),Math
 function setAim(q){let x=q.x+off.x,y=q.y+off.y;const dx=x-L.x,dy=y-L.y,len=Math.hypot(dx,dy);
  if(len>PMAX){x=L.x+dx/len*PMAX;y=L.y+dy/len*PMAX}T.x=x;T.y=y;clampT()}
 function pull(){const dx=L.x-T.x,dy=L.y-T.y,len=Math.hypot(dx,dy)||1;
- const pw=Math.min(1,len/PMAX),tf=CFG.flightBase+CFG.flightPower*pw,range=len*CFG.rangePerPx;
+ const pw=Math.min(1,len/PMAX),tf=CFG.flightBase+CFG.flightPower*pw,range=len*SET.rangePerPx;
  return{len,pw,tf,dir:{x:dx/len,y:dy/len},land:{x:L.x+dx/len*range,y:L.y+dy/len*range}}}
 cv.addEventListener('pointerdown',e=>{if(hid!==null)return;const q=pt(e);initAudio();if(A&&A.x.state!=='running')A.x.resume();
  if(phase===HOLD){if(dist(q,g)<RF*.75){holding=true;hid=e.pointerId;cv.setPointerCapture(hid)}}
@@ -60,42 +83,46 @@ cv.addEventListener('pointermove',e=>{if(e.pointerId!==hid)return;const q=pt(e);
  if(mode==='drag'){T.x=q.x+off.x;T.y=q.y+off.y;clampT()}else if(mode==='aim')setAim(q)});
 function release(){const P=pull();
  if(P.len<RF*CFG.pullMin){mode='idle';T.x=L.x;T.y=L.y;thump(.2);return}
- gv.x=(P.land.x-g.x)/P.tf;gv.y=(P.land.y-g.y)/P.tf;vz=CFG.gravity*P.tf/2;z=.01;landed=false;hit=false;rest=0;mode='fly';
+ gv.x=(P.land.x-g.x)/P.tf;gv.y=(P.land.y-g.y)/P.tf;vz=SET.gravity*P.tf/2;z=.01;landed=false;hit=false;rest=0;mode='fly';
  pulse=Math.max(pulse,.3*P.pw);thump(.4+.4*P.pw)}
 function up(e){if(e.pointerId!==hid)return;hid=null;holding=false;
  if(mode==='drag'){
   // Drag -> Throw: released inside the dashed launch mark snaps onto it; elsewhere it stays put
-  if(dist(T,L)<markR()){phase=THROW;mode='return';used=false;T.x=L.x;T.y=L.y;pulse=Math.max(pulse,.5);thump(.6)}
+  if(dist(T,L)<RF*SET.snapDistance){phase=THROW;goReturn(SET.snapMotion,SET.snapDuration);used=false;pulse=Math.max(pulse,.5);thump(.6)}
   else{mode='settle';thump(.3)}}
  else if(mode==='aim')release()}
 cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
 document.getElementById('rst').addEventListener('click',()=>reset(false));
 const sb=document.getElementById('snd');sb.addEventListener('click',()=>{muted=!muted;sb.setAttribute('aria-pressed',String(!muted))});
 
+// move back onto the launch mark: physical spring, or an eased tween
+function goReturn(motion,dur){mode='return';T.x=L.x;T.y=L.y;tw=motion==='spring'?null:{fx:g.x,fy:g.y,t:0,dur:Math.max(.05,dur),ease:EASE[motion]}}
 // landing (Throw study)
 function land(imp){
- if(!landed){landed=true;mode='roll';hit=dist(g,Tg)<RR*CFG.hitRadius;
+ if(!landed){landed=true;mode='roll';hit=dist(g,Tg)<RR*SET.hitRadius;
   if(hit){pulse=1;flash=1;thump(1)}else{thump(.5);if(dist(g,Tg)<RR*2)wob=1}}
  else thump(Math.min(.5,imp/1500));
  pv-=Math.min(imp,1400)*.0016;
- if(imp>CFG.bounceMinImpact){vz=imp*CFG.bounceKeep;gv.x*=CFG.groundKeep;gv.y*=CFG.groundKeep}else vz=0}
+ if(imp>CFG.bounceMinImpact){vz=imp*SET.bounceKeep;gv.x*=CFG.groundKeep;gv.y*=CFG.groundKeep}else vz=0}
 
 // loop
 function step(now){
  const dt=Math.min(Math.max((now-last)/1000,.004),.033);last=now;const t=(now-t0)/1000;
+ RR=RF*SET.ringRadius;PMAX=RF*SET.pullMax;
  pulse*=Math.pow(.02,dt);flash*=Math.pow(.05,dt);wob*=Math.pow(.03,dt);
  if(phase>=DRAG)reveal=Math.min(1,reveal+dt/.4);
  // Hold study: fill the ring, or drain it when released early; completion bursts and unlocks Drag
- if(phase===HOLD&&holding){p=Math.min(1,p+dt/HOLD_TIME);if(p>=1){phase=DRAG;holding=false;used=false;pulse=1;thump(.9)}}
+ if(phase===HOLD&&holding){p=Math.min(1,p+dt/SET.holdTime);if(p>=1){phase=DRAG;holding=false;used=false;pulse=1;thump(.9)}}
  else if(phase===HOLD&&p>0)p=Math.max(0,p-dt/.5);
- const pt0=phase===HOLD?.45+.55*p:1;pv+=(-(puff-pt0)*130-pv*10)*dt;puff+=pv*dt;
+ const curve=SET.holdCurve,pt0=phase===HOLD?SET.deflatedSize+(1-SET.deflatedSize)*(curve==='spring'?p:EASE[curve](p)):1;
+ if(phase===HOLD&&curve!=='spring'){puff=pt0;pv=0}else{pv+=(-(puff-pt0)*130-pv*10)*dt;puff+=pv*dt}
  if(phase===HOLD){const h=home();T.x=h.x;T.y=h.y}
  if(mode==='fly'||mode==='roll'){
   if(landed){
    if(hit){gv.x+=(-(g.x-Tg.x)*40-gv.x*9)*dt;gv.y+=(-(g.y-Tg.y)*40-gv.y*9)*dt}
-   else{const fr=Math.pow(CFG.rollFriction,dt);gv.x*=fr;gv.y*=fr}}
+   else{const fr=Math.pow(SET.rollFriction,dt);gv.x*=fr;gv.y*=fr}}
   g.x+=gv.x*dt;g.y+=gv.y*dt;
-  if(z>0||vz>0){vz-=CFG.gravity*dt;z+=vz*dt;if(z<=0){const imp=-vz;z=0;land(imp)}}
+  if(z>0||vz>0){vz-=SET.gravity*dt;z+=vz*dt;if(z<=0){const imp=-vz;z=0;land(imp)}}
   if(landed){
    const wl=(v)=>{pulse=Math.max(pulse,Math.min(.6,Math.abs(v)/1500));thump(Math.min(.6,Math.abs(v)/1500))};
    if(g.x<mg()){g.x=mg();wl(gv.x);gv.x=-gv.x*.5}if(g.x>W-mg()){g.x=W-mg();wl(gv.x);gv.x=-gv.x*.5}
@@ -103,10 +130,13 @@ function step(now){
    if(z===0&&vz===0){const sp=Math.hypot(gv.x,gv.y);
     // in the ring: the ending. Missed: back to the launch mark to try again
     if(hit){if(dist(g,Tg)<5&&sp<15){g.x=Tg.x;g.y=Tg.y;gv.x=gv.y=0;mode='done';phase=DONE}}
-    else if(sp<10){gv.x=gv.y=0;rest+=dt;if(rest>CFG.restTime){mode='return';T.x=L.x;T.y=L.y}}else rest=0}}
+    else if(sp<10){gv.x=gv.y=0;rest+=dt;if(rest>CFG.restTime)goReturn(SET.returnMotion,SET.returnDuration)}else rest=0}}
+  }else if(mode==='return'&&tw){
+  tw.t=Math.min(1,tw.t+dt/tw.dur);const e=tw.ease(tw.t),nx=tw.fx+(L.x-tw.fx)*e,ny=tw.fy+(L.y-tw.fy)*e;
+  gv.x=(nx-g.x)/dt;gv.y=(ny-g.y)/dt;g.x=nx;g.y=ny;if(tw.t>=1){tw=null;mode='idle';gv.x=gv.y=0}
  }else if(mode!=='done'){
   // spring follow: stiff while held (Drag/aim), soft otherwise (Drag study settle, Throw study return)
-  const held=mode==='aim'||mode==='drag',k=held?90:26,c=held?13:7;
+  const held=mode==='aim'||mode==='drag',k=held?SET.dragStiffness:26,c=held?SET.dragDamping:7;
   gv.x+=(-(g.x-T.x)*k-gv.x*c)*dt;gv.y+=(-(g.y-T.y)*k-gv.y*c)*dt;g.x+=gv.x*dt;g.y+=gv.y*dt;
   if(mode==='return'&&dist(g,L)<3&&Math.hypot(gv.x,gv.y)<20){mode='idle';g.x=L.x;g.y=L.y;gv.x=gv.y=0}}
  // body = ground position lifted by height
@@ -114,7 +144,7 @@ function step(now){
  B.vx+=((bx-B.x)/dt-B.vx)*a;B.vy+=((by-B.y)/dt-B.vy)*a;B.x=bx;B.y=by;
  B.ax=Math.max(-9000,Math.min(9000,(B.vx-px)/dt));B.ay=Math.max(-9000,Math.min(9000,(B.vy-py)/dt));
  const sn=Math.min(Math.hypot(B.vx,B.vy)/1400,1);
- const amp=1+(holding?p*3.5:0),fq=holding?6:0;
+ const amp=1+(holding?p*SET.holdShake:0),fq=holding?6:0;
  for(const f of fib){
   const lim=f.len*.8,gx=-B.vx*.05/S,gy=-B.vy*.05/S,wx=Math.sin(t*(1.3+fq)+f.ph)*1.6*amp,wy=Math.cos(t*(1.1+fq)+f.ph)*1.6*amp;
   const rx=f.x1/f.len*pulse*28,ry=f.y1/f.len*pulse*28;
@@ -134,7 +164,7 @@ function step(now){
   if(flash>.02){ctx.globalAlpha=flash;ctx.strokeStyle='#3a3a3a';ctx.lineWidth=7;ctx.beginPath();ctx.arc(0,0,RR*(1+(1-flash)*.14),0,6.283);ctx.stroke()}
   ctx.restore();
   // dashed launch mark (Throw study); darker while the dragged pompom is inside it
-  const over=mode==='drag'&&dist(T,L)<markR();
+  const over=mode==='drag'&&dist(T,L)<RF*SET.snapDistance;
   ctx.strokeStyle=over?'#3a3a3a':'#7a7a7a';ctx.lineWidth=3;ctx.setLineDash([8,9]);ctx.globalAlpha=(over?.8:.4)*reveal;
   ctx.beginPath();ctx.arc(L.x,L.y,markR(),0,6.283);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1}
  ctx.strokeStyle='#7a7a7a';ctx.lineWidth=3;
@@ -150,7 +180,7 @@ function step(now){
  // aim: band, trajectory preview, landing marker (Throw study)
  if(aiming&&P.len>=RF*CFG.pullMin){
   ctx.globalAlpha=.35;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(L.x,L.y);ctx.lineTo(g.x,g.y);ctx.stroke();
-  const zmax=CFG.gravity*P.tf*P.tf/8;ctx.fillStyle='#5a5a5a';
+  const zmax=SET.gravity*P.tf*P.tf/8;ctx.fillStyle='#5a5a5a';
   for(let i=1;i<=12;i++){const u=i/12,x=T.x+(P.land.x-T.x)*u,y=T.y+(P.land.y-T.y)*u-4*zmax*u*(1-u);
    ctx.globalAlpha=.65*(1-u*.5);ctx.beginPath();ctx.arc(x,y,3,0,6.283);ctx.fill()}
   ctx.globalAlpha=.5;ctx.strokeStyle='#7a7a7a';ctx.lineWidth=2.5;ctx.beginPath();ctx.ellipse(P.land.x,P.land.y,RF*.3,RF*.15,0,0,6.283);ctx.stroke();ctx.globalAlpha=1}

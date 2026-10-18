@@ -12,6 +12,8 @@ linear sequence: **Hold → Drag → Throw**, with the same pompom throughout.
 - **Throw** – pull back from the mark and release (Throw study slingshot, arc and bounce). Landing in the ring ends the sequence; a miss rolls back to the launch mark to try again.
 - **Reset** (bottom) returns to the start of Hold at any time.
 
-Files: `docs/index.html`, `docs/style.css`, `docs/pompom.js` (engine and sequence),
+- **Controls** – a collapsible panel on the left tunes Hold, Drag and Throw live. *Restore defaults* returns to the saved values (`SAVED` in `docs/pompom.js`); *Copy settings* copies all current values.
+
+Files: `docs/index.html`, `docs/style.css`, `docs/pompom.js` (engine, sequence and saved defaults), `docs/panel.js` (control panel),
 `docs/fibers.js` (fiber data from the studies), `docs/.nojekyll`. The original studies are in `artifacts/`.
 To publish, set GitHub Pages to deploy from the `main` branch, `/docs` folder.
