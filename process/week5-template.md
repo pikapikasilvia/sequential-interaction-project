@@ -10,7 +10,7 @@ Text for each row of the template, ready to paste. Images are in `process/screen
 
 ## Final concept
 
-You find a small, deflated pompom lying on the ground. Pressing and holding it puffs it up to full fluff. You then drag it onto a launch mark and throw it, slingshot-style, into a ring. The sequence is one continuous, linear experience with the same pompom from start to finish. I want it to feel tactile and a little playful: the pompom should seem soft and alive, with fibers that tremble, lag and burst in response to your hand, so each gesture feels like handling a real object rather than pressing a button.
+You find a small, deflated pompom lying on the ground. Pressing and holding it puffs it up to full fluff. You then drag it onto a launch mark and throw it, slingshot-style, into a ring. The sequence is one continuous, linear experience with the same pompom from start to finish. I want it to feel tactile, light and a little playful: the pompom should seem soft and alive, with fibers that tremble, lag and burst in response to your hand, so each gesture feels like handling a real object rather than pressing a button.
 
 ## Final prototype link
 
@@ -33,13 +33,13 @@ I wanted to refine the balance between "soft and floaty" and "weighty", and to t
 
 *Image: `screenshots/1-default.png`*
 
-**Default feel.** Hold 1.1 s, medium throw power (3.4), gravity 2000 px/s², bounce 0.38, grayscale visuals matching the original studies. This is the balanced baseline: the hold is long enough to feel deliberate, and the throw arcs and settles at a readable pace.
+**Original grayscale baseline.** Hold 1.1 s, medium throw power (3.4), gravity 2000 px/s², bounce 0.38, grayscale visuals matching the original studies. This is the balanced starting point: the hold feels deliberate, and the throw arcs and settles at a readable pace.
 
 ## Settings variation 2
 
 *Image: `screenshots/2-lighter.png`*
 
-**Lighter.** Hold 0.6 s, gravity lowered to 1100, bounce raised to 0.62, rolling friction 0.25, drag more responsive (stiffness 120, damping 9). Visuals: pale lavender and pink, thinner strands, light grain, and a faint, soft shadow. The pompom inflates quickly and floats and bounces more, so it feels airy and toy-like.
+**Lighter (chosen for the final prototype).** Hold 0.6 s, gravity lowered to 1100, bounce raised to 0.62, rolling friction 0.25, drag more responsive (stiffness 120, damping 9). Visuals: pale lavender and pink, thinner strands, light grain, and a faint, soft shadow. The pompom inflates quickly and floats and bounces more, so it feels airy and toy-like.
 
 ## Settings variation 3
 
@@ -55,7 +55,7 @@ That feedback led me to replace Flick with **Throw**. Throw uses an opposite ges
 
 ## Final Prototype Reflection
 
-Building the panels turned guesses into quick experiments. Instead of editing numbers in code and reloading, I could drag a slider and immediately feel the difference. That helped me discover how much of the "personality" comes from just a few values: gravity and bounce decide whether the pompom feels light or heavy, and hold duration decides whether inflating feels effortless or effortful. The Visual panel showed me that color and texture change the perceived weight too: the same physics reads heavier with dark, thick fibers and a hard shadow.
+Building the panels turned guesses into quick experiments. Instead of editing numbers in code and reloading, I could drag a slider and immediately feel the difference. That helped me discover how much of the "personality" comes from just a few values: gravity and bounce decide whether the pompom feels light or heavy, and hold duration decides whether inflating feels effortless or effortful. The Visual panel showed me that color and texture change the perceived weight too: the same physics reads heavier with dark, thick fibers and a hard shadow. Comparing the three variations, I chose the lighter purple setting for the final prototype because its soft colors and floaty, bouncy motion best match the playful, fluffy feeling I want.
 
 The most resolved part is the hand-off between steps. Hold unlocks Drag, Drag ends by snapping onto the launch mark, and Throw starts from there, all with the same pompom, so the sequence feels continuous rather than like three demos stitched together.
 
